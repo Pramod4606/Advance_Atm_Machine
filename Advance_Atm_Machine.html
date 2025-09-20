@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ATM Machine — Advanced</title>
+    <style>
+      :root {
+        --bg: #071029;
+        --card: #0b3b5c;
+        --panel: #0f5b78;
+        --accent: #38ada9;
+        --glass: rgba(255, 255, 255, 0.06);
+      }
+      * {
+        box-sizing: border-box;
+        font-family: Inter, system-ui, Arial, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, var(--bg), #082033);
+        color: #e6f0f0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .app {
+        width: 920px;
+        max-width: 100%;
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 20px;
+      }
+      .atm {
+        background: linear-gradient(180deg, var(--card), #103a57);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 10px 30px rgba(2, 10, 20, 0.6);
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo {
+        width: 56px;
+        height: 40px;
+        background: var(--panel);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0;
+      }
+      .screen {
+        margin-top: 12px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.02),
+          rgba(255, 255, 255, 0.01)
+        );
+        padding: 12px;
+        border-radius: 8px;
+      }
+      label {
+        font-size: 13px;
+        opacity: 0.9;
+      }
+      select,
+      input[type="password"],
+      input[type="number"],
+      input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        margin-top: 6px;
+        background: var(--glass);
+        color: inherit;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        margin-top: 10px;
+        background: var(--accent);
+        color: #052018;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .small {
+        padding: 8px;
+        font-size: 13px;
+      }
+
+      /* Right panel */
+      .panel {
+        background: linear-gradient(180deg, #07283a, #032a3b);
+        border-radius: 12px;
+        padding: 14px;
+        height: 560px;
+        display: flex;
+        flex-direction: column;
+      }
+      .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .balance {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+      }
+      .card-stage {
+        margin-top: 14px;
+        background: linear-gradient(180deg, #053046, #0a3142);
+        padding: 12px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 160px;
+        position: relative;
+      }
+      .card {
+        width: 260px;
+        height: 140px;
+        border-radius: 10px;
+        background: linear-gradient(90deg, #521551, #000000);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 12px;
+        transform: translateY(0);
+        transition: transform 0.6s ease, opacity 0.4s;
+      }
+      .card.inserted {
+        transform: translateY(10px) rotate(-6deg);
+        box-shadow: 0 20px 35px rgba(2, 10, 20, 0.6);
+      }
+      .muted {
+        opacity: 0.8;
+        font-size: 13px;
+      }
+      .history-list {
+        margin-top: 12px;
+        overflow: auto;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 8px;
+      }
+      .tx {
+        padding: 8px;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+        font-size: 13px;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .footer {
+        margin-top: auto;
+        font-size: 13px;
+        opacity: 0.8;
+      }
+
+      /* responsive */
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .panel {
+          height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="atm">
+        <header>
+          <div class="logo">ATM</div>
+          <div>
+            <h1>Advanced ATM Machine</h1>
+            <div class="muted">
+              Multiple users • localStorage persistence • daily limits
+            </div>
+          </div>
+        </header>
+
+        <div class="screen">
+          <label>Select Card (Sample users)</label>
+          <select id="cardSelect"></select>
+
+          <label style="margin-top: 8px">Enter PIN</label>
+          <input id="pinInput" type="password" placeholder="••••" />
+
+          <div style="display: flex; gap: 8px; margin-top: 10px">
+            <button id="insertBtn" class="small">Insert Card</button>
+            <button
+              id="ejectBtn"
+              class="small"
+              style="background: #e3e3e3; color: #042018"
+            >
+              Eject
+            </button>
+          </div>
+
+          <div id="loginMsg" class="muted" style="margin-top: 8px"></div>
+
+          <div id="authArea" style="display: none; margin-top: 12px">
+            <label
+              >Welcome, <span id="userName" style="font-weight: 700"></span
+            ></label>
+            <div style="margin-top: 8px; display: flex; gap: 8px">
+              <button onclick="showBalance()">Check Balance</button>
+              <button onclick="openDeposit()">Deposit</button>
+              <button onclick="openWithdraw()">Withdraw</button>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 8px">
+              <button onclick="changePinFlow()" style="background: #ffc857">
+                Change PIN
+              </button>
+              <button onclick="showMiniStatement()" style="background: #8bd3dd">
+                Mini Statement
+              </button>
+              <button onclick="logout()" style="background: #f06b6b">
+                Logout
+              </button>
+            </div>
+
+            <div id="actionMsg" style="margin-top: 10px" class="muted"></div>
+          </div>
+
+          <!-- Deposit/Withdraw forms -->
+          <div id="forms" style="display: none; margin-top: 12px">
+            <div id="depositForm" style="display: none">
+              <label>Deposit Amount</label>
+              <input id="depAmt" type="number" min="1" />
+              <button onclick="doDeposit()">Confirm Deposit</button>
+              <button
+                onclick="closeForms()"
+                style="background: #ddd; color: #042018"
+              >
+                Cancel
+              </button>
+              <div id="depMsg" class="muted"></div>
+            </div>
+
+            <div id="withdrawForm" style="display: none">
+              <label>Withdraw Amount</label>
+              <input id="wdAmt" type="number" min="1" />
+              <button onclick="doWithdraw()">Confirm Withdraw</button>
+              <button
+                onclick="closeForms()"
+                style="background: #ddd; color: #042018"
+              >
+                Cancel
+              </button>
+              <div id="wdMsg" class="muted"></div>
+            </div>
+
+            <div id="changePinForm" style="display: none">
+              <label>Current PIN</label>
+              <input id="curPin" type="password" />
+              <label style="margin-top: 6px">New PIN</label>
+              <input id="newPin" type="password" />
+              <button onclick="doChangePin()">Change PIN</button>
+              <button
+                onclick="closeForms()"
+                style="background: #ddd; color: #042018"
+              >
+                Cancel
+              </button>
+              <div id="pinMsg" class="muted"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="top-row">
+          <div>
+            <div class="balance">Balance: <span id="balanceVal">-</span></div>
+            <div class="muted">
+              Daily withdraw limit: ₹<span id="limitVal">20000</span>
+            </div>
+          </div>
+          <div class="actions">
+            <button onclick="resetSampleData()" class="small">
+              Reset Sample
+            </button>
+          </div>
+        </div>
+
+        <div class="card-stage">
+          <div id="cardVisual" class="card">
+            <div style="font-size: 14px; font-weight: 700">
+              Central Bank Of India
+            </div>
+            <div id="cardNumber" style="margin-top: 8px; letter-spacing: 2px">
+              XXXXXX-6700
+            </div>
+            <div style="margin-top: 8px; font-size: 12px" id="cardOwner">
+              Pramod Balasaheb Shere
+            </div>
+          </div>
+          <div class="muted" style="margin-top: 10px">
+            Insert card to authenticate. Use PIN to login.
+          </div>
+        </div>
+
+        <div class="history-list" id="historyBox">
+          <div class="muted">Transaction history (latest first)</div>
+          <div id="historyList"></div>
+        </div>
+
+        <div class="controls">
+          <button onclick="showAllHistory()">View All History</button>
+          <button onclick="downloadData()">Download Data</button>
+        </div>
+
+        <div class="footer">
+          Notes: Mini-statement shows last 5 transactions. Data saved locally in
+          your browser.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ------------------ Data model & persistence ------------------
+      const STORAGE_KEY = "atm_users_v1";
+      let users = {};
+      let currentUserId = null;
+
+      function todayString() {
+        const d = new Date();
+        return d.toISOString().slice(0, 10);
+      }
+
+      function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+      }
+
+      function load() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          users = JSON.parse(raw);
+        } else {
+          resetSampleData();
+        }
+      }
+
+      // seed sample users
+      function resetSampleData() {
+        users = {
+          card1001: {
+            name: "Pramod",
+            card: "1001-0001",
+            pin: "1234",
+            balance: 5000,
+            history: [],
+            daily: { date: todayString(), amount: 0 },
+          },
+          card1002: {
+            name: "Ambika",
+            card: "1002-0002",
+            pin: "0000",
+            balance: 12000,
+            history: [],
+            daily: { date: todayString(), amount: 0 },
+          },
+        };
+        save();
+        populateCardSelect();
+        showMsg("Sample data loaded");
+      }
+
+      // ------------------ UI helpers ------------------
+      const cardSelect = document.getElementById("cardSelect");
+      const insertBtn = document.getElementById("insertBtn");
+      const ejectBtn = document.getElementById("ejectBtn");
+      const pinInput = document.getElementById("pinInput");
+      const loginMsg = document.getElementById("loginMsg");
+      const cardVisual = document.getElementById("cardVisual");
+      const cardNumber = document.getElementById("cardNumber");
+      const cardOwner = document.getElementById("cardOwner");
+
+      function populateCardSelect() {
+        cardSelect.innerHTML = "";
+        for (const id in users) {
+          const opt = document.createElement("option");
+          opt.value = id;
+          opt.text = users[id].name + " — " + users[id].card;
+          cardSelect.appendChild(opt);
+        }
+      }
+
+      function showMsg(t) {
+        loginMsg.textContent = t;
+        setTimeout(() => {
+          if (loginMsg.textContent === t) loginMsg.textContent = "";
+        }, 2200);
+      }
+
+      // ------------------ Card animation & beep ------------------
+      function playBeep() {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = "sine";
+          o.frequency.value = 600;
+          g.gain.value = 0.02;
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start();
+          setTimeout(() => {
+            o.stop();
+            ctx.close();
+          }, 180);
+        } catch (e) {
+          /* autoplay blocked */
+        }
+      }
+
+      insertBtn.addEventListener("click", () => {
+        cardVisual.classList.add("inserted");
+        playBeep();
+        showMsg("Card inserted");
+      });
+      ejectBtn.addEventListener("click", () => {
+        cardVisual.classList.remove("inserted");
+        logout();
+        showMsg("Card ejected");
+      });
+
+      // ------------------ Auth flow ------------------
+      document.getElementById("pinInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          attemptLogin();
+        }
+      });
+      insertBtn.addEventListener("dblclick", attemptLogin);
+
+      function attemptLogin() {
+        const id = cardSelect.value;
+        const pin = pinInput.value.trim();
+        if (!id || !users[id]) {
+          showMsg("Select a card");
+          return;
+        }
+        if (pin === users[id].pin) {
+          currentUserId = id;
+          document.getElementById("authArea").style.display = "block";
+          document.getElementById("forms").style.display = "none";
+          document.getElementById("userName").textContent = users[id].name;
+          showMsg("Authenticated");
+          populatePanel();
+        } else {
+          showMsg("Wrong PIN");
+        }
+        pinInput.value = "";
+      }
+
+      function logout() {
+        currentUserId = null;
+        document.getElementById("authArea").style.display = "none";
+        document.getElementById("forms").style.display = "none";
+        document.getElementById("balanceVal").textContent = "-";
+        document.getElementById("cardNumber").textContent = "XXXX-XXXX";
+        document.getElementById("cardOwner").textContent = "-";
+      }
+
+      // ------------------ Panel actions ------------------
+      function populatePanel() {
+        const u = users[currentUserId];
+        document.getElementById("balanceVal").textContent =
+          "₹" + u.balance.toLocaleString();
+        document.getElementById("cardNumber").textContent = u.card;
+        document.getElementById("cardOwner").textContent = u.name;
+        renderHistory();
+      }
+
+      function showBalance() {
+        if (!currentUserId) return showMsg("Insert & login");
+        populatePanel();
+      }
+
+      // Deposit
+      function openDeposit() {
+        if (!currentUserId) return showMsg("Login first");
+        document.getElementById("forms").style.display = "block";
+        document.getElementById("depositForm").style.display = "block";
+        document.getElementById("withdrawForm").style.display = "none";
+        document.getElementById("changePinForm").style.display = "none";
+      }
+      function doDeposit() {
+        const a = Number(document.getElementById("depAmt").value);
+        if (!a || a <= 0) {
+          document.getElementById("depMsg").textContent = "Enter valid amount";
+          return;
+        }
+        users[currentUserId].balance += a;
+        users[currentUserId].history.unshift({
+          type: "Deposit",
+          amount: a,
+          when: new Date().toISOString(),
+        });
+        save();
+        document.getElementById("depMsg").textContent = "Deposited ₹" + a;
+        document.getElementById("depAmt").value = "";
+        populatePanel();
+      }
+
+      // Withdraw with daily limit check
+      const DAILY_LIMIT = 20000;
+      function openWithdraw() {
+        if (!currentUserId) return showMsg("Login first");
+        document.getElementById("forms").style.display = "block";
+        document.getElementById("withdrawForm").style.display = "block";
+        document.getElementById("depositForm").style.display = "none";
+        document.getElementById("changePinForm").style.display = "none";
+      }
+      function doWithdraw() {
+        const a = Number(document.getElementById("wdAmt").value);
+        const u = users[currentUserId];
+        if (!a || a <= 0) {
+          document.getElementById("wdMsg").textContent = "Enter valid amount";
+          return;
+        }
+        // reset daily if day changed
+        if (u.daily.date !== todayString()) {
+          u.daily.date = todayString();
+          u.daily.amount = 0;
+        }
+        if (a > u.balance) {
+          document.getElementById("wdMsg").textContent = "Insufficient balance";
+          return;
+        }
+        if (u.daily.amount + a > DAILY_LIMIT) {
+          document.getElementById("wdMsg").textContent = "Daily limit exceeded";
+          return;
+        }
+        u.balance -= a;
+        u.daily.amount += a;
+        u.history.unshift({
+          type: "Withdraw",
+          amount: a,
+          when: new Date().toISOString(),
+        });
+        save();
+        document.getElementById("wdMsg").textContent = "Withdrawn ₹" + a;
+        document.getElementById("wdAmt").value = "";
+        populatePanel();
+      }
+
+      function closeForms() {
+        document.getElementById("forms").style.display = "none";
+      }
+
+      // Change PIN
+      function changePinFlow() {
+        if (!currentUserId) return showMsg("Login first");
+        document.getElementById("forms").style.display = "block";
+        document.getElementById("changePinForm").style.display = "block";
+        document.getElementById("depositForm").style.display = "none";
+        document.getElementById("withdrawForm").style.display = "none";
+      }
+      function doChangePin() {
+        const cur = document.getElementById("curPin").value;
+        const neu = document.getElementById("newPin").value;
+        const u = users[currentUserId];
+        if (cur !== u.pin) {
+          document.getElementById("pinMsg").textContent = "Wrong current PIN";
+          return;
+        }
+        if (!/^[0-9]{4}$/.test(neu)) {
+          document.getElementById("pinMsg").textContent =
+            "New PIN must be 4 digits";
+          return;
+        }
+        u.pin = neu;
+        u.history.unshift({
+          type: "PIN Change",
+          amount: 0,
+          when: new Date().toISOString(),
+        });
+        save();
+        document.getElementById("pinMsg").textContent = "PIN changed";
+        document.getElementById("curPin").value = "";
+        document.getElementById("newPin").value = "";
+      }
+
+      // History rendering & mini statement
+      function renderHistory() {
+        const list = document.getElementById("historyList");
+        list.innerHTML = "";
+        if (!currentUserId) return;
+        const h = users[currentUserId].history;
+        if (!h || !h.length) {
+          list.innerHTML = '<div class="muted">No transactions</div>';
+          return;
+        }
+        for (let i = 0; i < Math.min(h.length, 20); i++) {
+          const tx = h[i];
+          const el = document.createElement("div");
+          el.className = "tx";
+          el.textContent =
+            tx.type +
+            " • ₹" +
+            (tx.amount || 0) +
+            " • " +
+            new Date(tx.when).toLocaleString();
+          list.appendChild(el);
+        }
+      }
+
+      function showMiniStatement() {
+        if (!currentUserId) return showMsg("Login first");
+        const h = users[currentUserId].history.slice(0, 5);
+        if (!h.length) return showMsg("No transactions");
+        let text = "Mini Statement:\\n";
+        h.forEach((t) => {
+          text += `${t.type} ₹${t.amount || 0} — ${new Date(
+            t.when
+          ).toLocaleString()}\\n`;
+        });
+        alert(text);
+      }
+
+      function showAllHistory() {
+        if (!currentUserId) return showMsg("Login first");
+        let h = users[currentUserId].history;
+        if (!h || !h.length) return showMsg("No transactions");
+        let text = "All transactions:\\n";
+        h.forEach((t) => {
+          text += `${t.type} ₹${t.amount || 0} — ${new Date(
+            t.when
+          ).toLocaleString()}\\n`;
+        });
+        alert(text);
+      }
+
+      // download data
+      function downloadData() {
+        const data = JSON.stringify(users, null, 2);
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "atm_data.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // utility
+      function showMsgInline(msg) {
+        document.getElementById("actionMsg").textContent = msg;
+        setTimeout(() => {
+          if (document.getElementById("actionMsg").textContent === msg)
+            document.getElementById("actionMsg").textContent = "";
+        }, 3000);
+      }
+
+      // alias for simple messages used elsewhere
+      function showMsg(t) {
+        loginMsg.textContent = t;
+        setTimeout(() => {
+          if (loginMsg.textContent === t) loginMsg.textContent = "";
+        }, 2200);
+      }
+
+      // init
+      load();
+      populateCardSelect();
+    </script>
+  </body>
+</html>
